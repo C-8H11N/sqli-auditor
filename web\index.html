@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SQLi Auditor 审计器</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<main class="shell">
+  <header>
+    <div>
+      <span class="eyebrow" data-i18n="eyebrow">仅检测型应用安全</span>
+      <h1>SQLi Auditor</h1>
+      <p data-i18n="tagline">面向已授权 URL 的低影响 SQL 注入扫描栈。</p>
+    </div>
+    <div class="header-actions">
+      <div class="status"><span class="dot"></span><span data-i18n="localOnly">仅本机</span></div>
+      <button id="lang-toggle" class="lang" type="button" title="English">English</button>
+    </div>
+  </header>
+
+  <section class="top-grid">
+    <form id="form" class="panel" autocomplete="off">
+      <h2 data-i18n="auditTitle">授权审计</h2>
+
+      <label for="target" data-i18n="target">目标 URL</label>
+      <input id="target" type="url" required placeholder="http://lab.local/item?id=1" aria-describedby="target-help">
+      <small id="target-help" data-i18n="targetHelp">含查询参数，例如 http://lab.local/item?id=1</small>
+
+      <label for="cookie" data-i18n="cookie">会话 Cookie（可选）</label>
+      <input id="cookie" type="password" autocomplete="off" placeholder="name=value" aria-describedby="cookie-help">
+      <small id="cookie-help" data-i18n="cookieHelp">仅在内存中使用，绝不写入日志或报告。</small>
+
+      <div class="row">
+        <div>
+          <label for="delay" data-i18n="delay">请求间隔（毫秒）</label>
+          <input id="delay" type="number" min="0" max="2000" value="150" aria-describedby="delay-help">
+          <small id="delay-help" data-i18n="delayHelp">每次探测之间的间隔，0–2000</small>
+        </div>
+        <div>
+          <label for="budget" data-i18n="budget">请求预算</label>
+          <input id="budget" type="number" min="20" max="240" value="120" aria-describedby="budget-help">
+          <small id="budget-help" data-i18n="budgetHelp">单次扫描的最大请求数（20–240）</small>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="preview" data-i18n="previewRows">预览行数</label>
+          <input id="preview" type="number" min="0" max="5" value="3" aria-describedby="preview-help">
+          <small id="preview-help" data-i18n="previewRowsHelp">每张表最多预览的行数（0–5）</small>
+        </div>
+        <div>
+          <label for="concurrency" data-i18n="concurrency">并发数</label>
+          <input id="concurrency" type="number" min="1" max="16" value="8" aria-describedby="concurrency-help">
+          <small id="concurrency-help" data-i18n="concurrencyHelp">枚举阶段的并发请求数（1–16）</small>
+        </div>
+      </div>
+
+      <label for="confirm" data-i18n="auth">授权确认短语</label>
+      <input id="confirm" required placeholder="我已获得授权" aria-describedby="confirm-help">
+      <small id="confirm-help" data-i18n="authHelp">请输入：我已获得授权（也接受 I HAVE AUTHORIZATION）</small>
+
+      <button id="submit" type="submit" data-i18n="start">开始授权扫描</button>
+      <p class="notice" data-i18n="notice">完整扫描栈使用 UNION 元数据发现与有界数据预览。无时间延迟探测、无无界导出。结果属于启发式检测。</p>
+    </form>
+
+    <section class="panel stack" aria-live="polite">
+      <div class="result-head">
+        <div>
+          <span class="eyebrow" data-i18n="stackTitle">扫描栈结果</span>
+          <h2 id="title" data-i18n="ready">就绪</h2>
+        </div>
+        <div class="head-actions">
+          <span id="partial-badge" class="badge partial" hidden data-i18n="partialNote">请求预算已用尽，结果为部分完成。</span>
+          <button id="export" class="secondary" hidden data-i18n="export">导出 JSON</button>
+        </div>
+      </div>
+
+      <div id="metrics" class="metrics">
+        <div><strong id="metric-requests">—</strong><span data-i18n="requests">请求数</span></div>
+        <div><strong id="metric-budget">—</strong><span data-i18n="budgetMetric">预算</span></div>
+        <div><strong id="metric-duration">—</strong><span data-i18n="duration">耗时</span></div>
+      </div>
+
+      <div class="stack-grid">
+        <ol id="stages" class="stages">
+          <li data-stage="parameter_detection"><span class="dot"></span><span class="stage-name">参数检测</span><span class="stage-status">等待中</span></li>
+          <li data-stage="injection_type"><span class="dot"></span><span class="stage-name">注入类型</span><span class="stage-status">等待中</span></li>
+          <li data-stage="column_count"><span class="dot"></span><span class="stage-name">列数检测</span><span class="stage-status">等待中</span></li>
+          <li data-stage="display_columns"><span class="dot"></span><span class="stage-name">回显列</span><span class="stage-status">等待中</span></li>
+          <li data-stage="databases"><span class="dot"></span><span class="stage-name">数据库</span><span class="stage-status">等待中</span></li>
+          <li data-stage="tables"><span class="dot"></span><span class="stage-name">表</span><span class="stage-status">等待中</span></li>
+          <li data-stage="fields"><span class="dot"></span><span class="stage-name">字段</span><span class="stage-status">等待中</span></li>
+          <li data-stage="data_preview"><span class="dot"></span><span class="stage-name">数据预览</span><span class="stage-status">等待中</span></li>
+        </ol>
+
+        <div id="results" class="results">
+          <div id="message" class="empty" data-i18n="emptyStart">输入一个含查询参数的已授权 URL 开始扫描。</div>
+          <p id="heuristic" class="heuristic" hidden data-i18n="heuristic">启发式检测结果，需人工复核，不能视为百分百确认漏洞。</p>
+        </div>
+      </div>
+    </section>
+  </section>
+</main>
+<script src="/i18n.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
